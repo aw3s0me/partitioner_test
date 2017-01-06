@@ -2,6 +2,7 @@ import com.google.common.base.Charsets
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import com.google.common.hash.Hashing
+import scala.collection.Map
 
 /**
   * Created by akorovin on 06.01.2017.
@@ -40,7 +41,14 @@ object HashPartitionerRun {
     // 2. hash molecules thus create HashedMolecules (write hash function)
     val hashedMoleculeInstance = moleculeInstances.map(molecule =>
       HashedMolecule(hash(molecule.subject), molecule.subject, molecule.triples)
-    ).toDF("hash", "subject", "triples")
+    )
+    //.toDF("hash", "subject", "triples")
+
+    hashedMoleculeInstance.show()
+
+    // see result
+    hashedMoleculeInstance.collect().foreach(ml => println("Molecule with hash: " + ml.hash))
+
     // TODO: 3. save to HDFS (dont forget to run hdfs)
   }
 
@@ -53,7 +61,7 @@ case class Molecule(subject: String, triples: Map[String, Triple])
 
 case class HashedMolecule(hash: Long, subject: String, triples: Map[String, Triple])
 
-case class Triple( private val subject: String,
-                   private val property: String,
-                   private val obj: String,
-                   private val isDatatype: Boolean)
+case class Triple(subject: String,
+                  property: String,
+                  obj: String,
+                  isDatatype: Boolean)
