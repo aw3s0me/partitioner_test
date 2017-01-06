@@ -1,5 +1,7 @@
+import com.google.common.base.Charsets
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import com.google.common.hash.Hashing
 
 /**
   * Created by akorovin on 06.01.2017.
@@ -7,7 +9,7 @@ import org.apache.spark.sql.functions._
   */
 object HashPartitionerRun {
   def main(args: Array[String]): Unit = {
-    // TODO: 1. sc.parallelize dataset and create Molecule instances in List array or Seq
+    // 1. create dataset and create Molecule instances in List array or Seq
     val spark = SparkSession.
       builder().
       master("local").
@@ -35,17 +37,21 @@ object HashPartitionerRun {
         "p8" -> Triple("s4", "p8", "8175133", true)))
     ).toDS()
 
-    // TODO: 2. hash molecules thus create HashedMolecules (todo: write hash function)
-    val hashedMoleculeInst
-
-
+    // 2. hash molecules thus create HashedMolecules (write hash function)
+    val hashedMoleculeInstance = moleculeInstances.map(molecule =>
+      HashedMolecule(hash(molecule.subject), molecule.subject, molecule.triples)
+    ).toDF("hash", "subject", "triples")
     // TODO: 3. save to HDFS (dont forget to run hdfs)
+  }
+
+  def hash(subject: String): Long = {
+    Hashing.md5().hashString(subject, Charsets.UTF_8).asLong()
   }
 }
 
-case class Molecule(private val subject: String, private val triples: Map[String, Triple])
+case class Molecule(subject: String, triples: Map[String, Triple])
 
-case class HashedMolecule(private val hash: Long, private val subject: String, private val triples: Map[String, Triple])
+case class HashedMolecule(hash: Long, subject: String, triples: Map[String, Triple])
 
 case class Triple( private val subject: String,
                    private val property: String,
