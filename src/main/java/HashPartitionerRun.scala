@@ -3,6 +3,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import com.google.common.hash.Hashing
 import scala.collection.Map
+import org.apache.spark.Partitioner
 
 /**
   * Created by akorovin on 06.01.2017.
@@ -38,6 +39,7 @@ object HashPartitionerRun {
         "p8" -> Triple("s4", "p8", "8175133", true)))
     ).toDS()
 
+    // HASHING BY HANDS
     // 2. hash molecules thus create HashedMolecules (write hash function)
     val hashedMoleculeInstance = moleculeInstances.map(molecule =>
       HashedMolecule(hash(molecule.subject), molecule.subject, molecule.triples)
@@ -48,6 +50,10 @@ object HashPartitionerRun {
 
     // see result
     hashedMoleculeInstance.collect().foreach(ml => println("Molecule with hash: " + ml.hash))
+
+    // WRITING CUSTOM HASH PARTITIONER
+    // TODO: problem. partition by is not available
+    // moleculeInstances.map(molecule => (molecule, 1)).partitionBy(new MoleculePartitioner(4))
 
     // TODO: 3. save to HDFS (dont forget to run hdfs)
   }
@@ -65,3 +71,18 @@ case class Triple(subject: String,
                   property: String,
                   obj: String,
                   isDatatype: Boolean)
+
+// CUSTOM PARTITIONER PART
+class MoleculePartitioner(override val numPartitions: Int) extends Partitioner {
+  override def getPartition(key: Any): Int = {
+    val k = key.asInstanceOf[Int]
+    return k % numPartitions
+  }
+
+  override def equals(other: scala.Any): Boolean = {
+    other match {
+      case obj: MoleculePartitioner => obj.numPartitions == numPartitions
+      case _ => false
+    }
+  }
+}
