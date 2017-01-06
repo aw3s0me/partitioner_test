@@ -13,6 +13,8 @@ object HashPartitionerRun {
       master("local").
       appName("partition").
       getOrCreate()
+    // to enable convertion from seq to ds
+    import spark.implicits._
 
     // Fig 3: RDF-MT Creation MULDER Paper (a)
     val moleculeInstances = Seq(
@@ -31,9 +33,12 @@ object HashPartitionerRun {
       Molecule("s4", Map(
         "p3" -> Triple("s4", "p3", "o7", false),
         "p8" -> Triple("s4", "p8", "8175133", true)))
-    )
+    ).toDS()
 
     // TODO: 2. hash molecules thus create HashedMolecules (todo: write hash function)
+    val hashedMoleculeInst
+
+
     // TODO: 3. save to HDFS (dont forget to run hdfs)
   }
 }
